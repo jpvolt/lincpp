@@ -9,7 +9,7 @@ template <typename t>
     class Mat{
         private:
             std::vector<std::vector<t>> data;
-            t determinant(Mat<t> mat){ // determinant calculator algorithm
+            t determinant(Mat<t> mat){ // determinant calculator algorithm (Laplace expansion)
                 size_t i, j, c, v;
                 int sinal = 1;
                 t d = 0;
@@ -88,6 +88,26 @@ template <typename t>
                 }
                 return mult;
             }
+            template<typename y>
+            Mat<t> operator*(y &B){// scalar mult
+                Mat<t> mult(rows, cols);
+                for(size_t i =0;i<rows;i++){
+                    for(size_t j=0;j<cols;j++){
+                        mult(i,j) = data[i][j]*B;
+                    }
+                }
+                return mult;
+            }
+            template<typename y>
+            Mat<t> operator/(y &B){// scalar division
+                Mat<t> div(rows, cols);
+                for(size_t i =0;i<rows;i++){
+                    for(size_t j=0;j<cols;j++){
+                        div(i,j) = data[i][j]/B;
+                    }
+                }
+                return div;
+            }
             friend std::ostream& operator<< (std::ostream& os, Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
                 int i,j;
                 os << std::endl;
@@ -110,7 +130,7 @@ template <typename t>
                 return transposed;
             }
             // end of operators overloading
-            t determinant(){ //determinant calculator function
+            t determinant(){ //determinant calculator function (Laplace expansion)
                 if(rows==1)
                     return data[0][0];
                 else if(rows==2){
@@ -120,6 +140,61 @@ template <typename t>
                 else{
                     return determinant(*this);
                 }
+            }
+            Mat<t> getMinorMat(bool cofactor = true){ // compute minors/cofactors mat - used for inverse calculation
+                size_t i, j, c, v, b, n;
+                int sinal = 1;
+                Mat<t> minors(rows, cols);
+                for(i=0;i<rows;i++){ // for each row
+                    for(j=0;j<cols;j++){ // for each col
+                        // fill minor matrix
+                        Mat<t> minor(rows-1, cols-1);
+                        b = 0;
+                        for(c=0;c<rows;c++){
+                            if(c == i)
+                                continue;
+                            n = 0;
+                            for(v=0;v<rows;v++){
+                                if(v == j)
+                                    continue;
+
+                                minor(b,n) = data[c][v];
+                                n++;
+
+                            }
+                            b++;
+                        }
+                        std::cout<<"minor:"<<minor;
+                        std::cout<<" "<<std::endl;
+                        minors(i,j) = minor.determinant();
+                        if(cofactor){
+                            minors(i,j) = minors(i,j)*sinal;
+                        }
+                        sinal = sinal * -1;
+                    }
+                }
+                std::cout<<"minors:"<<minors;
+                std::cout<<" "<<std::endl;
+                return minors;
+            }
+            Mat<t> inverse(bool &success){ // using Minors, Cofactors and Adjugate
+                t d = this->determinant();
+                Mat<t> inverse(rows, cols);
+                if(d == 0){ // inverse dont exist
+                    success = false;
+                    return inverse;
+                }
+                std::cout<<"determinant:"<<d<<std::endl;
+                
+                Mat<t> cofactors(rows, cols);
+                cofactors = getMinorMat();
+                cofactors = cofactors.T(); // transpose cofactors matrix to get adjoint matrix
+                std::cout<<"cofactors:"<<cofactors;
+                std::cout<<" "<<std::endl;
+
+                inverse = cofactors / d;
+                return inverse;
+
             }
     };
 
