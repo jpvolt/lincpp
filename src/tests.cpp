@@ -1,12 +1,9 @@
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
 #include "lin/mat.hpp"
 #include "lin/kalman.hpp"
-#include <iostream>
-#include "vendor/catch.hpp"
 
-int main(int argc, char *argv[]){
-    lin::Mat<double> state(3,1);
-    lin::Mat<double> transition(3,3);
-    lin::Mat<double> control(3,3);
+TEST_CASE("Determinants are computed", "[Determinant]"){
     lin::Mat<int> test(4,4);
     test(0,0) = 1;
     test(0,1) = 3;
@@ -24,9 +21,5 @@ int main(int argc, char *argv[]){
     test(3,1) = 2;
     test(3,2) = 0;
     test(3,3) = 9;
-    std::cout<<"det:"<<test.determinant()<<std::endl;
-    kalman::EKF ekf;
-    ekf.setState(&state);
-    ekf.setTransition(&transition); 
+    REQUIRE(test.determinant() == -476);
 }
-
