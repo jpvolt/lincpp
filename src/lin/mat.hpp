@@ -9,16 +9,38 @@ template <typename t>
     class Mat{
         private:
             std::vector<std::vector<t>> data;
+            t determinant(Mat<t> mat){ // determinant calculator algorithm
+                size_t i, j, c, v;
+                int sinal = 1;
+                t d = 0;
+                for(c=0;c<mat.cols;c++){
+                    Mat<t> inside(mat.rows-1, mat.cols-1);
+                    for(i=1;i<mat.rows;i++){
+                        v = 0;
+                        for(j=0;j<mat.cols;j++){
+                            if(j == c)
+                                continue;
+                            
+                            inside(i-1, v) = data[i][j];
+                            v++;
+                        }
+                    }
+                    d += data[0][c] * sinal * inside.determinant();
+                    sinal = sinal * -1;
+                }
+                return d;
+            }
         public:
             unsigned int rows;
             unsigned int cols;
-            Mat(unsigned int rows, unsigned int cols):rows(rows), cols(cols){
+            Mat(unsigned int rows, unsigned int cols):rows(rows), cols(cols){ // constructor 
                 data.resize(rows);
                 for(size_t i = 0;i<data.size();i++){
                     data[i].resize(cols);
                 }
             }
-            void operator=(Mat<t> B){
+            // operators overloading
+            void operator=(Mat<t> B){ 
                 rows = B.rows;
                 cols = B.cols;
                 data.clear();
@@ -66,7 +88,7 @@ template <typename t>
                 }
                 return mult;
             }
-            friend std::ostream& operator<< (std::ostream& os, Mat<t> &mat){
+            friend std::ostream& operator<< (std::ostream& os, Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
                 int i,j;
                 os << std::endl;
                 for(i=0;i<mat.rows;i++){
@@ -87,28 +109,8 @@ template <typename t>
                 }
                 return transposed;
             }
-            t determinant(Mat<t> mat){
-                size_t i, j, c, v;
-                int sinal = 1;
-                t d = 0;
-                for(c=0;c<mat.cols;c++){
-                    Mat<t> inside(mat.rows-1, mat.cols-1);
-                    for(i=1;i<mat.rows;i++){
-                        v = 0;
-                        for(j=0;j<mat.cols;j++){
-                            if(j == c)
-                                continue;
-                            
-                            inside(i-1, v) = data[i][j];
-                            v++;
-                        }
-                    }
-                    d += data[0][c] * sinal * inside.determinant();
-                    sinal = sinal * -1;
-                }
-                return d;
-            }
-            t determinant(){
+            // end of operators overloading
+            t determinant(){ //determinant calculator function
                 if(rows==1)
                     return data[0][0];
                 else if(rows==2){

@@ -21,5 +21,5 @@ TEST_CASE("Determinants are computed", "[Determinant]"){
     test(3,1) = 2;
     test(3,2) = 0;
     test(3,3) = 9;
-    REQUIRE(test.determinant() == -476);
+    REQUIRE(test.determinant() == -376);
 }
