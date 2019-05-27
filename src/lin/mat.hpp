@@ -141,10 +141,20 @@ template <typename t>
             Mat<t> T() const{
                 Mat<t> transposed(cols, rows);
                 for(size_t i=0;i<rows;i++){
-                    for(size_t j=0;j<cols;j++)
+                    for(size_t j=0;j<cols;j++){
                         transposed(i,j) = data[j][i];
                 }
+            }
                 return transposed;
+            }
+            Mat<t> I() const{
+                assert(rows == cols); // square matrix
+                Mat<t> indentity(rows, rows);
+                indentity = 0; // fill matrix with 0s
+                for(int i =0;i<rows;i++)
+                    indentity(i,i) = 1;
+
+                return indentity;
             }
             // end of operators overloading
             void pSize(){
@@ -194,9 +204,18 @@ template <typename t>
                 return minors;
             }
             Mat<t> inverse(bool &success) const{ // using Minors, Cofactors and Adjugate
+                success = true;
+                std::cout<<"dte"<< (*this);
+                std::cout<<std::endl;
                 t d = this->determinant();
+                if(rows == 1 && cols == 1){ // scalars
+                    Mat<t> r(1,1);
+                    r = 1/data[0][0];
+                    return r;
+                }
                 Mat<t> inverse(rows, cols);
                 if(d == 0){ // inverse dont exist
+                    std::cout<<"invert failed!"<<std::endl;
                     success = false;
                     return inverse;
                 }

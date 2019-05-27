@@ -9,7 +9,7 @@ class KF{
         lin::Mat<double>* Xk; // state matrix
         lin::Mat<double>* A; // control to control transition matrix state to state
         lin::Mat<double>* B; // control transition matrix control to state 
-        lin::Mat<double>* Pk; // covariance matrix
+        lin::Mat<double>* Pk; // process covariance matrix
         lin::Mat<double>* Hk; // sensor transition matrix -  state to sensor 
         lin::Mat<double>* Rk; // sensor covariance matrix
         lin::Mat<double>* K; // kalman gain
@@ -31,13 +31,24 @@ class KF{
         }
         void predict(lin::Mat<double> control, lin::Mat<double> Q){
             *Xk = ((*A)*(*Xk)) + (*B)*control; // update prediction
+            std::cout<<"Model:"<<*Xk;
+            std::cout<<std::endl;
+            std::cout<<"Control:"<<(*B)*control;
+            std::cout<<std::endl;
             *Pk = (*A)*(*Pk)*(*A).T() + Q; // update covariance
+            std::cout<<"process Covariance:"<<(*Pk);
+            std::cout<<std::endl;
         }
         void update(lin::Mat<double> sensorData){
-            *Xk = (*Xk) + (*K)*(sensorData - ((*Hk)*(*Xk)));
-            *Pk = (*Pk) - (*K)*(*Hk)*(*Pk);
             bool s;
             *K = *(Pk)*(*Hk).T()*((*Hk)*(*Pk)*(*Hk).T() + (*Rk)).inverse(s); // update kalman gain
+            std::cout<<"inverse:"<<s<<std::endl;
+            *Xk = (*Xk) + (*K)*(sensorData - ((*Hk)*(*Xk)));
+            std::cout<<"State:"<<*Xk;
+            std::cout<<std::endl;
+            lin::Mat<double> inter(2,2);
+            inter = (*K)*(*Hk);
+            *Pk = (inter.I() - inter)*(*Pk);
         }
 };
 class EKF{

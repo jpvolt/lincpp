@@ -1,0 +1,110 @@
+#include "lin/mat.hpp"
+#include "lin/kalman.hpp"
+#include <iostream>
+#define WITHOUT_NUMPY
+#include "matplotlibcpp.h"
+#include <iterator>
+#include <random>
+#include <vector>
+
+
+namespace plt = matplotlibcpp;
+
+int main(int argc, char *argv[]){
+    double dt = 0.1;
+    lin::Mat<double> Xk(2,1);
+    Xk = 0;
+    lin::Mat<double> A(2,2);
+    double a[] = {1, dt, 0, 1};
+    A = a;
+
+    lin::Mat<double> B(2,2);
+    double b[] = {dt*dt/2, 0, dt, 0};
+    B = b;
+
+    lin::Mat<double> Hk(2,2);
+    double h[] = {1, 0, 0, 1};
+    Hk = h;
+
+    lin::Mat<double> Rk(2,2);
+    double r[] = {5, 0, 0, 2};
+    Rk = r;
+
+    lin::Mat<double> Pk(2,2);
+    double p[] = {1, 0, 0, 1};
+    Pk = p;
+
+    lin::Mat<double> control(2,1); // aceleration
+    control = 0;
+    lin::Mat<double> Qk(2,2);
+    Qk = 0;
+
+
+    // Define random generator with Gaussian distribution
+    const double mean = 0.0;
+    const double stddev = 0.2;
+    std::default_random_engine generator;
+    std::normal_distribution<double> dist(mean, stddev);
+
+    kalman::KF kf;
+
+    kf.setState(&Xk);
+    kf.setCovariance(&Pk);
+    kf.setSensorError(&Rk);
+    kf.setStateTransition(&A);
+    kf.setSensorTransition(&Hk);
+    kf.setControlTransition(&B);
+    
+
+    lin::Mat<double> sensor(2,1);
+    sensor = 0;
+
+    kf.init();
+    std::vector<double> vr;
+    std::vector<double> vs;
+    std::vector<double> vk;
+    std::vector<double> gpsr;
+    std::vector<double> gpss;
+    std::vector<double> gpsk;
+
+    double gps = 0;
+    double v = 0;
+    for(int i=0;i<90;i++){
+
+        double  LO = -1;
+        double HI = 4;
+        double a =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
+
+        control = a;
+
+        gps = gps + v*dt;
+        gpsr.push_back(gps);
+        v = v + a*dt;
+        vr.push_back(v);
+        std::cout<<"pos:"<<gps<<", v:"<<v<<", a:"<<a<<std::endl;
+        sensor(0,0) = gps + 2*dist(generator);
+        gpss.push_back(sensor(0,0));
+        sensor(1,0) = v + 5*dist(generator);
+        vs.push_back(sensor(1,0));
+
+        Qk = 2*dist(generator);
+        kf.predict(control, Qk);
+        std::cout<<"sensor:"<<sensor;
+        std::cout<<std::endl;
+        kf.update(sensor);
+
+        gpsk.push_back(Xk(0,0));
+        vk.push_back(Xk(1,0));
+
+    }
+
+    //plt::plot(vr);
+    //plt::plot(vs);
+    //plt::plot(vk)
+    plt::plot(gpss);
+    plt::plot(gpsk);
+    plt::legend();
+    plt::show();
+
+}
+
