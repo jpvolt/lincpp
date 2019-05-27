@@ -139,7 +139,7 @@ template <typename t>
                 return os;
             }
             Mat<t> T() const{
-                Mat<t> transposed(rows, cols);
+                Mat<t> transposed(cols, rows);
                 for(size_t i=0;i<rows;i++){
                     for(size_t j=0;j<cols;j++)
                         transposed(i,j) = data[j][i];
@@ -147,6 +147,9 @@ template <typename t>
                 return transposed;
             }
             // end of operators overloading
+            void pSize(){
+                std::cout<<"[ "<<rows<<" x "<<cols<< " ]"<<std::endl;
+            }
             t determinant() const{ //determinant calculator function (Laplace expansion)
                 if(rows==1)
                     return data[0][0];
