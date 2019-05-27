@@ -51,6 +51,13 @@ template <typename t>
                         data[i][j] = B(i,j);
                 }
             }
+            template<typename y>
+            void operator=(y B){ 
+                for(size_t i = 0;i<rows;i++){
+                    for(size_t j = 0;j<cols;j++)
+                        data[i][j] = B;
+                }
+            }
             t& operator ()(int idx, int idy){
                 return data[idx][idy];
             }
@@ -110,6 +117,13 @@ template <typename t>
                     }
                 }
                 return div;
+            }
+            template<typename y>
+            void operator= (y d[]){
+                for(int i=0;i<rows;i++){
+                    for(int j=0;j<cols;j++)
+                        data[i][j] = d[rows*i + j];
+                }
             }
             friend std::ostream& operator<< (std::ostream& os, const Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
                 int i,j;
