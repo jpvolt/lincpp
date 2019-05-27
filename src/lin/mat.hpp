@@ -9,7 +9,7 @@ template <typename t>
     class Mat{
         private:
             std::vector<std::vector<t>> data;
-            t determinant(Mat<t> mat){ // determinant calculator algorithm (Laplace expansion)
+            t determinant(const Mat<t> mat) const{ // determinant calculator algorithm (Laplace expansion)
                 size_t i, j, c, v;
                 int sinal = 1;
                 t d = 0;
@@ -167,8 +167,6 @@ template <typename t>
                             }
                             b++;
                         }
-                        std::cout<<"minor:"<<minor;
-                        std::cout<<" "<<std::endl;
                         minors(i,j) = minor.determinant();
                         if(cofactor){
                             minors(i,j) = minors(i,j)*sinal;
@@ -176,8 +174,6 @@ template <typename t>
                         sinal = sinal * -1;
                     }
                 }
-                std::cout<<"minors:"<<minors;
-                std::cout<<" "<<std::endl;
                 return minors;
             }
             Mat<t> inverse(bool &success) const{ // using Minors, Cofactors and Adjugate
@@ -187,13 +183,10 @@ template <typename t>
                     success = false;
                     return inverse;
                 }
-                std::cout<<"determinant:"<<d<<std::endl;
                 
                 Mat<t> cofactors(rows, cols);
                 cofactors = getMinorMat();
                 cofactors = cofactors.T(); // transpose cofactors matrix to get adjoint matrix
-                std::cout<<"cofactors:"<<cofactors;
-                std::cout<<" "<<std::endl;
 
                 inverse = cofactors / d;
                 return inverse;
