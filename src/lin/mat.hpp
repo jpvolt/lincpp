@@ -54,6 +54,9 @@ template <typename t>
             t& operator ()(int idx, int idy){
                 return data[idx][idy];
             }
+            t& operator ()(size_t idx, size_t idy){
+                return data[idx][idy];
+            }
             template<typename y>
             Mat<t> operator+(Mat<y> &B){//sum
                 assert(this->rows == B.rows && this->cols == B.cols); // diferent size matrices
@@ -198,4 +201,18 @@ template <typename t>
             }
     };
 
+}
+template<typename t>
+bool operator==( lin::Mat<t> A, lin::Mat<t> B){ 
+    bool ret = false;
+    assert(A.rows == B.rows && A.cols == B.cols); // diferent size matrices
+    for(int i = 0;i<A.rows;i++){
+        for(int j = 0;j<A.cols;j++){
+            if(A(i,j) == B(i,j))
+                ret = true;
+            else
+                ret = false;
+        }
+    }
+    return ret;
 }
