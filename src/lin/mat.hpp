@@ -54,11 +54,11 @@ template <typename t>
             t& operator ()(int idx, int idy){
                 return data[idx][idy];
             }
-            t& operator ()(size_t idx, size_t idy){
+            t operator ()(int idx, int idy) const{
                 return data[idx][idy];
             }
             template<typename y>
-            Mat<t> operator+(Mat<y> &B){//sum
+            Mat<t> operator+(const Mat<y> &B) const{//sum
                 assert(this->rows == B.rows && this->cols == B.cols); // diferent size matrices
                 Mat<t> sum(this->rows, this->cols);
                 for(size_t i=0; i<this->rows;i++){
@@ -68,7 +68,7 @@ template <typename t>
                 return sum;
             }
             template<typename y>
-            Mat<t> operator-(Mat<y> &B){//sub
+            Mat<t> operator-(const Mat<y> &B) const{//sub
                 assert(this->rows == B.rows && this->cols == B.cols); // diferent size matrices
                 Mat<t> sum(this->rows, this->cols);
                 for(size_t i=0; i<this->rows;i++){
@@ -78,7 +78,7 @@ template <typename t>
                 return sum;
             }
             template<typename y>
-            Mat<t> operator*(Mat<y> &B){//mult
+            Mat<t> operator*(const Mat<y> &B) const{//mult
                 assert(this->cols == B.rows); // check if multiplication is possible
                 Mat<t> mult(this->rows, B.cols);
                 for(size_t i =0;i<this->rows;i++){
@@ -92,7 +92,7 @@ template <typename t>
                 return mult;
             }
             template<typename y>
-            Mat<t> operator*(y &B){// scalar mult
+            Mat<t> operator*(const y &B) const{// scalar mult
                 Mat<t> mult(rows, cols);
                 for(size_t i =0;i<rows;i++){
                     for(size_t j=0;j<cols;j++){
@@ -102,7 +102,7 @@ template <typename t>
                 return mult;
             }
             template<typename y>
-            Mat<t> operator/(y &B){// scalar division
+            Mat<t> operator/(const y &B) const{// scalar division
                 Mat<t> div(rows, cols);
                 for(size_t i =0;i<rows;i++){
                     for(size_t j=0;j<cols;j++){
@@ -111,7 +111,7 @@ template <typename t>
                 }
                 return div;
             }
-            friend std::ostream& operator<< (std::ostream& os, Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
+            friend std::ostream& operator<< (std::ostream& os, const Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
                 int i,j;
                 os << std::endl;
                 for(i=0;i<mat.rows;i++){
@@ -124,7 +124,7 @@ template <typename t>
                 }
                 return os;
             }
-            Mat<t> T(){
+            Mat<t> T() const{
                 Mat<t> transposed(rows, cols);
                 for(size_t i=0;i<rows;i++){
                     for(size_t j=0;j<cols;j++)
@@ -133,7 +133,7 @@ template <typename t>
                 return transposed;
             }
             // end of operators overloading
-            t determinant(){ //determinant calculator function (Laplace expansion)
+            t determinant() const{ //determinant calculator function (Laplace expansion)
                 if(rows==1)
                     return data[0][0];
                 else if(rows==2){
@@ -144,7 +144,7 @@ template <typename t>
                     return determinant(*this);
                 }
             }
-            Mat<t> getMinorMat(bool cofactor = true){ // compute minors/cofactors mat - used for inverse calculation
+            Mat<t> getMinorMat(bool cofactor = true) const{ // compute minors/cofactors mat - used for inverse calculation
                 size_t i, j, c, v, b, n;
                 int sinal = 1;
                 Mat<t> minors(rows, cols);
@@ -180,7 +180,7 @@ template <typename t>
                 std::cout<<" "<<std::endl;
                 return minors;
             }
-            Mat<t> inverse(bool &success){ // using Minors, Cofactors and Adjugate
+            Mat<t> inverse(bool &success) const{ // using Minors, Cofactors and Adjugate
                 t d = this->determinant();
                 Mat<t> inverse(rows, cols);
                 if(d == 0){ // inverse dont exist
@@ -203,7 +203,7 @@ template <typename t>
 
 }
 template<typename t>
-bool operator==( lin::Mat<t> A, lin::Mat<t> B){ 
+bool operator==(const lin::Mat<t> A, const lin::Mat<t> B){ 
     bool ret = false;
     assert(A.rows == B.rows && A.cols == B.cols); // diferent size matrices
     for(int i = 0;i<A.rows;i++){
