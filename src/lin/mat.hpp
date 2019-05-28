@@ -2,6 +2,8 @@
 #include <assert.h> 
 #include <vector>
 #include <iostream>
+#include <initializer_list>
+
 
 namespace lin{
 
@@ -65,6 +67,16 @@ template <typename t>
                         data[i][j] = d[cols*i + j];
                 }
             }
+            void operator=(std::initializer_list<t> l){
+                std::vector<t> temp;
+                temp.insert(temp.end(), l.begin(), l.end());
+                assert(l.size() == rows*cols);
+                for(int i=0;i<rows;i++){
+                    for(int j=0;j<cols;j++){
+                        data[i][j] = temp[cols*i +j]; 
+                    }
+                }
+            }
             t& operator ()(int idx, int idy){
                 return data[idx][idy];
             }
@@ -80,7 +92,7 @@ template <typename t>
                         sum(i,j) = data[i][j] + B(i,j);
                 }
                 return sum;
-            }
+                }
             template<typename y>
             Mat<t> operator-(const Mat<y> &B) const{//sub
                 assert(this->rows == B.rows && this->cols == B.cols); // diferent size matrices

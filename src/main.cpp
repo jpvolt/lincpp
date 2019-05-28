@@ -16,15 +16,13 @@ int main(int argc, char *argv[]){
     lin::Mat<double> Xk(2,1);
     Xk = 100;
     lin::Mat<double> A(2,2);
-    double a[] = {1, dt, 0, 1};
-    A = a;
+    A = {1, dt, 0, 1};
     std::cout<<"A:"<<A;
     lin::Mat<double> B(2,1);
     B(0,0) = dt*dt/2;
     B(1,0) = dt;
     lin::Mat<double> Hk(3,2);
-    double h[] = {1 , dt, 0, 1 , 0, 1};
-    Hk = h;
+    Hk = {1 , dt, 0, 1 , 0, 1};
     std::cout<<"Hk:"<<Hk;
     lin::Mat<double> Rk(3,3);
     Rk = Rk.I();
@@ -66,9 +64,10 @@ int main(int argc, char *argv[]){
     std::vector<double> gpss;
     std::vector<double> gpsk;
 
+    Zk = {0,0};
     double gps = 0;
     double v = 0;
-    for(int i=0;i<900;i++){
+    for(int i=0;i<90;i++){
 
         double  LO = -2;
         double HI = 4;
