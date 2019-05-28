@@ -6,7 +6,6 @@
 #include <iterator>
 #include <random>
 #include <vector>
-#include <cmath>
 
 
 namespace plt = matplotlibcpp;
@@ -78,8 +77,8 @@ int main(int argc, char *argv[]){
         control = 0;
         std::cout<<"pos:"<<gps<<", v:"<<v<<", a:"<<a<<std::endl;
         Zk(0,0) = gps + 6*dist(generator);
-        Zk(1,0) = v + 3*dist(generator);
-        Zk(2,0) = v + 2*dist(generator);
+        Zk(1,0) = v + 3*dist(generator) + 2;
+        Zk(2,0) = v + 2*dist(generator) - 1.5;
         gpss.push_back(Zk(0,0));
         vs.push_back(Zk(1,0));
         vt.push_back(Zk(2,0));
@@ -88,8 +87,8 @@ int main(int argc, char *argv[]){
         kf.update(Zk);
 
         // env update
-        v = std::exp(gps);
-        gps = i;
+        v = v + a*dt;
+        gps = gps + v*dt;
         gpsr.push_back(gps);
         vr.push_back(v);
 
@@ -102,9 +101,12 @@ int main(int argc, char *argv[]){
     plt::named_plot("Sensor 1",vs);
     plt::named_plot("sensor 2",vt);
     plt::named_plot("kalman speed",vk);
-    //plt::named_plot("Real positon",gpsr);
-    //plt::named_plot("gps sensor",gpss);
-    //plt::named_plot("Kalman position",gpsk);
+    plt::named_plot("Real positon",gpsr);
+    plt::named_plot("gps sensor",gpss);
+    plt::named_plot("Kalman position",gpsk);
+    plt::plot(gpsr);
+    plt::plot(gpss);
+    plt::plot(gpsk);
     plt::legend();
     plt::show();
 
