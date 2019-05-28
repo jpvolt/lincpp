@@ -142,7 +142,7 @@ template <typename t>
                 Mat<t> transposed(cols, rows);
                 for(size_t i=0;i<rows;i++){
                     for(size_t j=0;j<cols;j++){
-                        transposed(i,j) = data[j][i];
+                        transposed(j,i) = data[i][j];
                 }
             }
                 return transposed;
