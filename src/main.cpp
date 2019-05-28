@@ -13,7 +13,7 @@ namespace plt = matplotlibcpp;
 int main(int argc, char *argv[]){
     double dt = 0.1;
     lin::Mat<double> Xk(1,1);
-    Xk = 0;
+    Xk = 3;
     lin::Mat<double> A(1,1);
     A = 1;
 
@@ -29,12 +29,12 @@ int main(int argc, char *argv[]){
     Rk(1,1) = 0.15;
 
     lin::Mat<double> Pk(1,1);
-    Pk = 1;
+    Pk = 0;
 
     lin::Mat<double> control(1,1); 
     control = 0;
     lin::Mat<double> Qk(1,1);
-    Qk = 0.01;
+    Qk = 0.05;
 
 
     // Define random generator with Gaussian distribution
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]){
 
     double gps = 0;
     double v = 4;
-    for(int i=0;i<90;i++){
+    for(int i=0;i<19;i++){
 
         vr.push_back(v);
         sensor(0,0)= v + dist(generator) + 0.2;

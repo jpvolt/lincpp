@@ -58,6 +58,13 @@ template <typename t>
                         data[i][j] = B;
                 }
             }
+            template<typename y>
+            void operator=(y d[]){
+                for(int i=0;i<rows;i++){
+                    for(int j=0;j<cols;j++)
+                        data[i][j] = d[cols*i + j];
+                }
+            }
             t& operator ()(int idx, int idy){
                 return data[idx][idy];
             }
@@ -117,13 +124,6 @@ template <typename t>
                     }
                 }
                 return div;
-            }
-            template<typename y>
-            void operator= (y d[]){
-                for(int i=0;i<rows;i++){
-                    for(int j=0;j<cols;j++)
-                        data[i][j] = d[rows*i + j];
-                }
             }
             friend std::ostream& operator<< (std::ostream& os, const Mat<t> &mat){ // NEED FIX! - dont compile with << std::endl;
                 int i,j;
@@ -205,8 +205,6 @@ template <typename t>
             }
             Mat<t> inverse(bool &success) const{ // using Minors, Cofactors and Adjugate
                 success = true;
-                std::cout<<"dte"<< (*this);
-                std::cout<<std::endl;
                 t d = this->determinant();
                 if(rows == 1 && cols == 1){ // scalars
                     Mat<t> r(1,1);
