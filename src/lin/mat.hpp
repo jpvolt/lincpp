@@ -35,6 +35,7 @@ template <typename t>
         public:
             unsigned int rows;
             unsigned int cols;
+            Mat(){}
             Mat(unsigned int rows, unsigned int cols):rows(rows), cols(cols){ // constructor 
                 data.resize(rows);
                 for(size_t i = 0;i<data.size();i++){

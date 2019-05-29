@@ -51,21 +51,43 @@ class KF{
             *Pk = (inter.I() - inter)*(*Pk);
         }
 };
-class EKF{
+class EKFin{
     private:
-        lin::Mat<std::string>* statesNames;
-        lin::Mat<double>* state;
-        lin::Mat<double>* transition;
+        std::vector<lin::Mat<double>(*)(lin::Mat<double>, lin::Mat<double>)> F;
+        lin::Mat<double> JF;
+        std::vector<lin::Mat<double>(*)(lin::Mat<double>)> G;
+        lin::Mat<double> JG;
+        lin::Mat<double> Xk_1; // old state matrix
+        lin::Mat<double>* Xk; // state matrix
+        lin::Mat<double> Uk_1; //  old control matrix
+        lin::Mat<double> Uk; // control matrix
     public:
-        EKF(){}
-        void setStateNames(lin::Mat<std::string> *names){statesNames = names;}
-        void setState(lin::Mat<double> *statesValue){state = statesValue;}
-        void setTransition(lin::Mat<double> *transitionMat){transition = transitionMat;}
-        lin::Mat<std::string> getStateNames(){return *statesNames;}
-        lin::Mat<double> getState(){return *state;}
-        void estimate(lin::Mat<double> control){
-            lin::Mat<double> Xk(state->rows, state->cols);
-            Xk = ((*transition)*(*state)) + control;
+        EKFin(){}
+        void setState(lin::Mat<double> *statesValue){Xk = statesValue;}
+        void addToF(lin::Mat<double> (*f)(lin::Mat<double>, lin::Mat<double>)){
+            F.push_back(f);
+        }
+        void addToG(lin::Mat<double>(*g)(lin::Mat<double>)){
+            G.push_back(g);
+        }
+        void computeJacobians(double delta = 0.01){
+            int i,j;
+            lin::Mat<double> J(Xk->rows, Xk->cols);
+            J = 0;
+            JF = J;
+            JG = J;
+            lin::Mat<double> X0, X1, x,u;
+
+            X0 = F[i](Xk_1, Uk_1);
+            for(i=0;i<Xk->rows;i++){
+                x = Xk_1;
+                x(i,0) = x(i,0) + delta;
+                X1 = F[i](x, Uk);
+                for(j=0;j<Xk->rows;j++){
+                    JF(j,i) = (x(i,0) - Xk_1(i,0))/delta;
+                }
+            }
+
         }
 };
 
