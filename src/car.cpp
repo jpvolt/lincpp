@@ -30,9 +30,9 @@ int main(int argc, char *argv[]){
     // Define random generator with Gaussian distribution
     std::default_random_engine generator;
     std::normal_distribution<double> dist1(0, 1);
-    std::normal_distribution<double> dist2(0, 1.64);
-    std::normal_distribution<double> dist3(0, 1.32);
-    std::normal_distribution<double> dist(0, 0.2);
+    std::normal_distribution<double> dist2(0, 0.64);
+    std::normal_distribution<double> dist3(0, 0.32);
+    std::normal_distribution<double> dist(0, 0.5);
     
     lin::Mat<double> X(1,1);
     lin::Mat<double> Xr(1,1);
@@ -42,13 +42,13 @@ int main(int argc, char *argv[]){
     lin::Mat<double> R(3,3);
     R = 0;
     R(0,0) = 1;
-    R(1,1) = 1.4;
-    R(2,2) = 1.10;
+    R(1,1) = 0.4;
+    R(2,2) = 0.10;
 
     lin::Mat<double> P(1,1);
 
     lin::Mat<double> Q(1,1);
-    Q = 0.04;
+    Q = 0.25;
 
     lin::Mat<double> Z(3,1);
     Z = 0;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
         Z(0,0) = Xr(0,0) + dist1(generator);
         Z(1,0) = Xr(0,0) + dist2(generator);
         Z(2,0) = Xr(0,0) + dist3(generator);
-        tempreal.push_back(Xr(0,0));
+        tempreal(Xr(0,0));
         temp1.push_back(Z(0,0));
         temp2.push_back(Z(1,0));
         temp3.push_back(Z(2,0));
