@@ -8,92 +8,109 @@
 #include <vector>
 #include <cmath>
 
+#define print std::cout<<"here"<<std::endl;
 
 namespace plt = matplotlibcpp;
+double dt = 0.01;
+
+lin::Mat<double> F(lin::Mat<double> x, lin::Mat<double> u){
+    lin::Mat<double> out(3,1);
+    out(0,0) = x(1,0)*std::cos(x(2,0))*dt;
+    out(1,0) = x(1,0);
+    out(2,0) = x(2,0);
+    return out;
+}
+
+lin::Mat<double> G(lin::Mat<double> x){
+    lin::Mat<double> out(4,1);
+    out = 0;
+    out(0,0) = x(1,0);
+    out(1,0) = x(1,0);
+    return out;
+}
 
 int main(int argc, char *argv[]){
-    double dt = 0.1;
-    lin::Mat<double> Xk(2,1);
-    Xk = 100;
-    lin::Mat<double> A(2,2);
-    A = {1, dt, 0, 1};
-    std::cout<<"A:"<<A;
-    lin::Mat<double> B(2,1);
-    B(0,0) = dt*dt/2;
-    B(1,0) = dt;
-    lin::Mat<double> Hk(3,2);
-    Hk = {1 , dt, 0, 1 , 0, 1};
-    std::cout<<"Hk:"<<Hk;
-    lin::Mat<double> Rk(3,3);
-    Rk = Rk.I();
-    Rk(0,0) = 2;
-    Rk(1,1) = 1.64;
-    Rk(2,2) = 1.3;
-    std::cout<<"Rk:"<<Rk;
-    lin::Mat<double> Pk(2,2);
-    Pk = Pk.I();
-    std::cout<<"Pk:"<<Pk;
-    lin::Mat<double> control(1,1);
-
-    lin::Mat<double> Qk(2,2);
-    Qk = Qk.I()*0.1;
-    std::cout<<"Qk:"<<Qk;
-    lin::Mat<double> Zk(3,1);
 
     // Define random generator with Gaussian distribution
     const double mean = 0.0;
     const double stddev = 0.3;
     std::default_random_engine generator;
     std::normal_distribution<double> dist(mean, stddev);
+    
+    lin::Mat<double> X(3,1);
+    X = 100;
 
-    kalman::KF kf;
+    lin::Mat<double> R(4,4);
+    R = 0;
+    R(0,0) = 0.64;
+    R(1,1) = 0.32;
+    R(2,2) = 0.20;
+    R(3,3) = 0.10;
 
-    kf.setState(&Xk);
-    kf.setCovariance(&Pk);
-    kf.setSensorError(&Rk);
-    kf.setStateTransition(&A);
-    kf.setSensorTransition(&Hk);
-    kf.setControlTransition(&B);
-    kf.init();
+    lin::Mat<double> P(3,3);
+    P = P.I();
+    P = P*0.5;
+
+    lin::Mat<double> Q(3,3);
+    Q = Q.I()*0.1;
+
+    lin::Mat<double> Z(4,1);
+    Z = 0;
+
+    lin::Mat<double> control(4,1);
+    control = 0;
+
+    kalman::EKFin ekf;
+
+    ekf.setState(&X);
+    ekf.setSensorError(&R);
+    ekf.setSensor(&Z);
+    ekf.setCovariance(&P);
+    ekf.setControl(&control);
+    ekf.setF(F);
+    ekf.setG(G);
+    ekf.computeJacobians();
+    print
+
 
     std::vector<double> vr;
     std::vector<double> vs;
     std::vector<double> vt;
     std::vector<double> vk;
-    std::vector<double> gpsr;
-    std::vector<double> gpss;
-    std::vector<double> gpsk;
+    std::vector<double> xr;
+    std::vector<double> xk;
 
-    Zk = {0,0};
-    double gps = 0;
+
+    double x = 0;
     double v = 0;
+    double a = 0;
+    double  LO = -2;
+    double HI = 4;
+    print
     for(int i=0;i<90;i++){
 
-        double  LO = -2;
-        double HI = 4;
-        double a =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
 
-        //control = a + dist(generator)*0.3;
-        control = 0;
-        std::cout<<"pos:"<<gps<<", v:"<<v<<", a:"<<a<<std::endl;
-        Zk(0,0) = gps + 6*dist(generator);
-        Zk(1,0) = v + 3*dist(generator);
-        Zk(2,0) = v + 2*dist(generator);
-        gpss.push_back(Zk(0,0));
-        vs.push_back(Zk(1,0));
-        vt.push_back(Zk(2,0));
+        double j =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
+        double s =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
 
-        kf.predict(control, Qk);
-        kf.update(Zk);
+        std::cout<<"x:"<<x<<", v:"<<v<<", a:"<<a<<", s:"<<s<<std::endl;
+        Z(0,0) = v + 6*dist(generator);
+        Z(1,0) = v + 3*dist(generator);
+        Z(2,0) = a + 2*dist(generator);
+        Z(3,0) = s + 1*dist(generator);
+        vs.push_back(Z(0,0));
+        vt.push_back(Z(1,0));
 
+        ekf.predict(Q);
+        ekf.update();
+        xk.push_back(X(0,0));
+        vk.push_back(X(1,0));
+
+        std::cout<<"xk:"<<X(0,0)<<", vk:"<<X(1,0)<<std::endl;
         // env update
-        v = std::exp(gps);
-        gps = i;
-        gpsr.push_back(gps);
-        vr.push_back(v);
-
-        gpsk.push_back(Xk(0,0));
-        vk.push_back(Xk(1,0));
+        x = x + v*std::cos(s);
+        v = v + a*dt;
+        a = a + j*dt;
 
     }
 
