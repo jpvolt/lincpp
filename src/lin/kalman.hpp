@@ -67,7 +67,7 @@ class EKFin{
         void setG(lin::Mat<double>(*g)(lin::Mat<double>)){
             G = g;
         }
-        void computeJacobians(double delta = 0.0001){
+        void computeJacobians(double delta = 0.01){
             int i,j;
             lin::Mat<double> J(Xk->rows, Xk->rows);
             lin::Mat<double> J2(Zk->rows, Xk->rows);

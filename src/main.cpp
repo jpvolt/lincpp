@@ -13,24 +13,38 @@
 namespace plt = matplotlibcpp;
 double dt = 0.01;
 
-lin::Mat<double> F(lin::Mat<double> x, lin::Mat<double> u){
+lin::Mat<double> F(lin::Mat<double> X, lin::Mat<double> u){
     lin::Mat<double> out(5,1);
-    out(0,0) = x(0,0) + x(2,0)*std::cos(x(3,0))*u(0,0);
-    out(1,0) = x(1,0) + x(2,0)*std::sin(x(3,0))*u(0,0);
-    out(2,0) = x(2,0) + u(1,0)*u(0,0);
-    out(3,0) = x(3,0);
-    out(4,0) = x(4,0) + x(2,0)*std::tan(u(2,0))*u(0,0);
+    double x,y,v,ax, a,delta,t,teta;
+    x = X(0,0);
+    y = X(1,0);
+    v = X(2,0);
+    ax = X(3,0);
+    teta = X(4,0);
+    t = u(0,0);
+    a = u(1,0);
+    delta = u(2,0);
+    out(0,0) = x + v*std::cos(teta)*t;
+    out(1,0) = y + v*std::sin(teta)*t;
+    out(2,0) = v + a*t;
+    out(3,0) = a;
+    out(4,0) = teta + v*std::tan(delta)*t;
     return out;
 }
 
-lin::Mat<double> G(lin::Mat<double> x){
+lin::Mat<double> G(lin::Mat<double> X){
     lin::Mat<double> out(6,1);
-    out(0,0) = x(0,0);
-    out(1,0) = x(1,0);
-    out(2,0) = x(2,0);
-    out(3,0) = x(2,0);
-    out(4,0) = x(2,0);
-    out(5,0) = x(3,0);
+    double x,y,v,ax;
+    x = X(0,0);
+    y = X(1,0);
+    v = X(2,0);
+    ax = X(3,0);
+    out(0,0) = x;
+    out(1,0) = y;
+    out(2,0) = v;
+    out(3,0) = v;
+    out(4,0) = v;
+    out(5,0) = ax;
     return out;
 }
 
@@ -50,20 +64,20 @@ int main(int argc, char *argv[]){
 
     lin::Mat<double> R(6,6);
     R = 0;
-    R(0,0) = 1; //1.84;
-    R(1,1) = 1; //1.84;
-    R(3,3) = 0.64*0.64;
-    R(5,5) = 0.5*0.5;
-    /*
-    R(2,2) = 1; //1.00;
+    R(0,0) = 1;
+    R(1,1) = 1;
+    R(5,5) = 0.25;
     R(4,4) = 0.32*0.32;
+    /*
+    R(3,3) = 0.4;
+    R(2,2) = 1; //1.00;
     */
 
 
     lin::Mat<double> P(5,5);
 
     lin::Mat<double> Q(5,5);
-    Q = Q.I()*0.2;
+    Q = Q.I()*0.25;
 
     lin::Mat<double> Z(6,1);
     Z = 0;
@@ -97,7 +111,7 @@ int main(int argc, char *argv[]){
     double  LO = -2;
     double HI = 4;
     print
-    for(int i=0;i<150;i++){
+    for(int i=0;i<1000;i++){
 
 
         double a =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
@@ -105,14 +119,14 @@ int main(int argc, char *argv[]){
 
         std::cout<<"x:"<<Xr(0,0)<<", v:"<<Xr(2,0)<<", a:"<<a<<", s:"<<s<<std::endl;
 
-        control(0,0) = 0.1;
+        control(0,0) = 0.01;
         control(1,0) = a;
         control(2,0) = s;
         Z(0,0) = Xr(0,0) + distGPS(generator);
         Z(1,0) = Xr(1,0) + distGPS(generator);
         Z(2,0) = Xr(2,0) + distGPS(generator);
         Z(3,0) = Xr(2,0) + distPIR(generator);
-        Z(4,0) = Xr(2,0) + distYasa(generator);
+        Z(4,0) = Xr(2,0) + distPIR(generator);
         Z(5,0) = a + distAcc(generator);
         vs.push_back(Z(2,0));
         vt.push_back(Z(4,0));
@@ -131,6 +145,9 @@ int main(int argc, char *argv[]){
         control(1,0) = a + distAcc(generator);
         control(2,0) = s + distAcc(generator);
         Xr = F(Xr, control);
+
+
+        
     }
 
     plt::named_plot("Real speed",vr);
