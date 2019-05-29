@@ -26,6 +26,7 @@ lin::Mat<double> G(lin::Mat<double> x){
     out = 0;
     out(0,0) = x(1,0);
     out(1,0) = x(1,0);
+    out(3,0) = x(2,0);
     return out;
 }
 
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]){
     std::normal_distribution<double> dist(mean, stddev);
     
     lin::Mat<double> X(3,1);
-    X = 100;
+    X = 0;
 
     lin::Mat<double> R(4,4);
     R = 0;
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]){
     double  LO = -2;
     double HI = 4;
     print
-    for(int i=0;i<90;i++){
+    for(int i=0;i<15;i++){
 
 
         double j =  LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
@@ -106,9 +107,9 @@ int main(int argc, char *argv[]){
         xk.push_back(X(0,0));
         vk.push_back(X(1,0));
 
-        std::cout<<"xk:"<<X(0,0)<<", vk:"<<X(1,0)<<std::endl;
+        std::cout<<"xk:"<<X(0,0)<<", vk:"<<X(1,0)<<", theta:"<<X(2,0)<<std::endl;
         // env update
-        x = x + v*std::cos(s);
+        x = x + v*std::cos(s)*dt;
         v = v + a*dt;
         a = a + j*dt;
 

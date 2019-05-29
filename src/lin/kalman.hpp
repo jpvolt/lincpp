@@ -67,7 +67,7 @@ class EKFin{
         void setG(lin::Mat<double>(*g)(lin::Mat<double>)){
             G = g;
         }
-        void computeJacobians(double delta = 0.1){
+        void computeJacobians(double delta = 0.0001){
             int i,j;
             lin::Mat<double> J(Xk->rows, Xk->rows);
             lin::Mat<double> J2(Zk->rows, Xk->rows);
@@ -85,7 +85,7 @@ class EKFin{
                 X1 = F(x, (*Uk));
                 Xf = X1 - X0;
                 for(j=0;j<Xk->rows;j++){
-                    JF(j,i) = Xf(i,0)/2*delta;
+                    JF(j,i) = Xf(j,0)/(2*delta);
                 }
                 x = (*Xk);
                 x(i,0) = x(i,0) - delta;
@@ -94,9 +94,10 @@ class EKFin{
                 X1 = G(x);
                 Xf = X1 - X0;
                 for(j=0;j<Zk->rows;j++){
-                    JG(j,i) = Xf(i,0)/2*delta;
+                    JG(j,i) = Xf(j,0)/(2*delta);
                 }
             }
+            std::cout << " X :" << (*Xk);
             std::cout << " JF :" << JF;
             std::cout << " JG :" << JG;
             std::cout << std::endl;
