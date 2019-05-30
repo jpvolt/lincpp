@@ -59,13 +59,13 @@ int main(int argc, char *argv[]){
     kalman::EKFin ekf;
 
     ekf.setState(&X);
-    ekf.setSensorError(&R);
+    ekf.setSensorNoiseCovariance(R);
+    ekf.setProcessNoiseCovariance(Q);
     ekf.setSensor(&Z);
-    ekf.setCovariance(&P);
     ekf.setControl(&control);
     ekf.setF(F);
     ekf.setG(G);
-    ekf.computeJacobians();
+    ekf.init();
 
     std::vector<double> temp1;
     std::vector<double> temp2;
@@ -81,12 +81,12 @@ int main(int argc, char *argv[]){
         Z(0,0) = Xr(0,0) + dist1(generator);
         Z(1,0) = Xr(0,0) + dist2(generator);
         Z(2,0) = Xr(0,0) + dist3(generator);
-        tempreal(Xr(0,0));
+        tempreal.push_back(Xr(0,0));
         temp1.push_back(Z(0,0));
         temp2.push_back(Z(1,0));
         temp3.push_back(Z(2,0));
 
-        ekf.predict(Q);
+        ekf.predict();
         ekf.update();
         tempkalman.push_back(X(0,0));
 
