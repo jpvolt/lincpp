@@ -125,7 +125,7 @@ class EKFin{
         void setGJacobian(lin::Mat<double>(*g)(lin::Mat<double>)){jg = g;jg_s = true;}
         void init(){
             lin::Mat<double> pkC(Xk->rows, Xk->rows);
-            Pk = pkC.I()*0.001;
+            Pk = pkC.I();
         }
         void predict(){
             (*Xk) =  F((*Xk), (*Uk));
@@ -139,11 +139,10 @@ class EKFin{
             Sk = JG*Pk*JG.T() + Rk;
             bool b;
             Sk = Sk.inverse(b);
-            K = Pk*JG.T()*Sk;
-            if(!b && LastInverse.rows!=1) // if inversion falied, use last know inverse
-                K = Pk*JG.T()*LastInverse;
+            if(b) // check if inversion was sucessufuly 
+                K = Pk*JG.T()*Sk;
             else
-                LastInverse = Sk;
+                std::cout << "Cant compute Kalman gain!"<< std::endl;
 
             (*Xk) = (*Xk) + K*Yk;
             Ik = K*JG;
