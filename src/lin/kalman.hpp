@@ -58,16 +58,14 @@ class EKFin{
         lin::Mat<double> LastInverse;
         lin::Mat<double>(*jf)(lin::Mat<double>); // compute jacobian at x
         lin::Mat<double>(*jg)(lin::Mat<double>); // compute jacobian at x
+        double delta = 0.01; // used to compute jacobians numericaly
         bool  jf_s = false;
         bool  jg_s = false;
-        void computeJacobians(double delta = 0.01){
+        void computeJF(){ // compute jacobian of f(x,u)
                 int i,j;
                 lin::Mat<double> J(Xk->rows, Xk->rows);
-                lin::Mat<double> J2(Zk->rows, Xk->rows);
                 J = 0;
-                J2 = 0;
                 JF = J;
-                JG = J2;
                 lin::Mat<double> X0, X1, x, Xf;
 
                 for(i=0;i<Xk->rows;i++){
@@ -83,23 +81,34 @@ class EKFin{
                         }
                     }else{
                         JF = jf((*Xk));
-                    }
-                    if(!jg_s){
-                    x = (*Xk);
-                    x(i,0) = x(i,0) - delta;
-                    X0 = G(x);
-                    x(i,0) = x(i,0) + 2*delta;
-                    X1 = G(x);
-                    Xf = X1 - X0;
-                    for(j=0;j<Zk->rows;j++){
-                        JG(j,i) = Xf(j,0)/(2*delta);
-                    }
-                    }else{
-                        JG = jg((*Xk));
+                        break;
                     }
                 }
-                std::cout << " X :" << (*Xk);
                 std::cout << " JF :" << JF;
+                std::cout << std::endl;
+        }
+        void computeJG(){ // compute jacobian of g(x)
+                int i,j;
+                lin::Mat<double> J(Zk->rows, Xk->rows);
+                JG = J;
+                lin::Mat<double> X0, X1, x, Xf;
+
+                for(i=0;i<Xk->rows;i++){
+                    if(!jg_s){
+                        x = (*Xk);
+                        x(i,0) = x(i,0) - delta;
+                        X0 = G(x);
+                        x(i,0) = x(i,0) + 2*delta;
+                        X1 = G(x);
+                        Xf = X1 - X0;
+                        for(j=0;j<Zk->rows;j++){
+                            JG(j,i) = Xf(j,0)/(2*delta);
+                        }
+                    }else{
+                        JG = jg((*Xk));
+                        break;
+                    }
+                }
                 std::cout << " JG :" << JG;
                 std::cout << std::endl;
         }
@@ -117,17 +126,16 @@ class EKFin{
         void init(){
             lin::Mat<double> pkC(Xk->rows, Xk->rows);
             Pk = pkC.I()*0.001;
-            computeJacobians();
         }
         void predict(){
-            computeJacobians();
             (*Xk) =  F((*Xk), (*Uk));
+            computeJF();
             Pk = JF*Pk*JF.T() + Qk;
         }
         void update(){
-            computeJacobians();
             lin::Mat<double> Yk, Sk, Ik;
             Yk = (*Zk) - G((*Xk));
+            computeJG();
             Sk = JG*Pk*JG.T() + Rk;
             bool b;
             Sk = Sk.inverse(b);
