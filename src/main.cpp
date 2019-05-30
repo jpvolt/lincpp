@@ -11,17 +11,21 @@
 #define print std::cout<<"here"<<std::endl;
 
 namespace plt = matplotlibcpp;
-double dt = 0.01;
 
 lin::Mat<double> F(lin::Mat<double> X, lin::Mat<double> u){
-    return X;
+    lin::Mat<double> out(3,1);
+    out(0,0) = X(0,0) + std::cos(X(2,0))*u(0,0);
+    out(1,0) = X(1,0) + std::sin(X(2,0))*u(0,0);
+    out(2,0) = X(2,0) + 0.1*std::tan(u(1,0))*u(0,0);
+    return out;
 }
 
 lin::Mat<double> G(lin::Mat<double> X){
-    lin::Mat<double> out(3,1);
+    lin::Mat<double> out(4,1);
     out(0,0) = X(0,0);
-    out(1,0) = X(0,0);
+    out(1,0) = X(1,0);
     out(2,0) = X(0,0);
+    out(3,0) = X(1,0);
     return out;
 }
 
@@ -29,76 +33,84 @@ int main(int argc, char *argv[]){
 
     // Define random generator with Gaussian distribution
     std::default_random_engine generator;
-    std::normal_distribution<double> dist1(0, 1);
-    std::normal_distribution<double> dist2(0, 1.64);
-    std::normal_distribution<double> dist3(0, 1.32);
+    std::normal_distribution<double> gps1(0, 1);
+    std::normal_distribution<double> gps2(0, 0.64);
     std::normal_distribution<double> dist(0, 0.2);
     
-    lin::Mat<double> X(1,1);
-    lin::Mat<double> Xr(1,1);
+    lin::Mat<double> X(3,1);
+    lin::Mat<double> Xr(3,1);
     Xr =0;
     X = 0;
 
-    lin::Mat<double> R(3,3);
+    lin::Mat<double> R(4,4);
     R = 0;
     R(0,0) = 1;
-    R(1,1) = 1.4;
-    R(2,2) = 1.10;
+    R(1,1) = 1;
+    R(2,2) = 0;
+    R(3,3) = 0;
 
-    lin::Mat<double> P(1,1);
+    lin::Mat<double> P(3,3);
 
-    lin::Mat<double> Q(1,1);
+    lin::Mat<double> Q(3,3);
     Q = 0.04;
 
-    lin::Mat<double> Z(3,1);
+    lin::Mat<double> Z(4,1);
     Z = 0;
 
-    lin::Mat<double> control(1,1);
+    lin::Mat<double> control(2,1);
     control = 0;
+    control(0,0) = 0.1; // dt
 
     kalman::EKFin ekf;
 
     ekf.setState(&X);
-    ekf.setSensorError(&R);
+    ekf.setSensorNoiseCovariance(R);
+    ekf.setProcessNoiseCovariance(Q);
     ekf.setSensor(&Z);
-    ekf.setCovariance(&P);
     ekf.setControl(&control);
     ekf.setF(F);
     ekf.setG(G);
-    ekf.computeJacobians();
+    ekf.init();
 
-    std::vector<double> temp1;
-    std::vector<double> temp2;
-    std::vector<double> temp3;
-    std::vector<double> tempreal;
-    std::vector<double> tempkalman;
+    std::vector<double> gps1x;
+    std::vector<double> gps1y;
+    std::vector<double> gps2x;
+    std::vector<double> gps2y;
+    std::vector<double> realx;
+    std::vector<double> realy;
+    std::vector<double> kx;
+    std::vector<double> ky;
 
 
     for(int i=0;i<1000;i++){
+        
+        double s = dist(generator);
+        control(1,0) = s;
 
+        Z(0,0) = Xr(0,0) + gps1(generator);
+        Z(1,0) = Xr(1,0) + gps1(generator);
+        Z(2,0) = Xr(0,0) + gps2(generator);
+        Z(3,0) = Xr(1,0) + gps2(generator);
+        gps1x.push_back(Z(0,0));
+        gps1y.push_back(Z(1,0));
+        gps2x.push_back(Z(2,0));
+        gps2y.push_back(Z(3,0));
 
-
-        Z(0,0) = Xr(0,0) + dist1(generator);
-        Z(1,0) = Xr(0,0) + dist2(generator);
-        Z(2,0) = Xr(0,0) + dist3(generator);
-        tempreal.push_back(Xr(0,0));
-        temp1.push_back(Z(0,0));
-        temp2.push_back(Z(1,0));
-        temp3.push_back(Z(2,0));
-
-        ekf.predict(Q);
+        ekf.predict();
         ekf.update();
-        tempkalman.push_back(X(0,0));
+        kx.push_back(X(0,0));
+        ky.push_back(X(1,0));
 
-        Xr = Xr(0,0) + dist(generator);
+        Xr = F(Xr, control);
+        realx.push_back(Xr(0,0));
+        realy.push_back(Xr(1,0));
         
     }
 
-    plt::named_plot("temp1", temp1);
-    plt::named_plot("temp2", temp2);
-    plt::named_plot("temp3", temp3);
-    plt::named_plot("real temp", tempreal);
-    plt::named_plot("kalman temp", tempkalman);
+    plt::named_plot("X gps1", gps1x);
+    plt::named_plot("X gps2", gps2x);
+    plt::named_plot("X real", realx);
+    plt::named_plot("X kalman", kx);
     plt::legend();
     plt::show();
 

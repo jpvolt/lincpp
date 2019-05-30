@@ -44,29 +44,17 @@ class KF{
 };
 class EKFin{
     private:
-        lin::Mat<double>(*F)(lin::Mat<double>, lin::Mat<double>);
-        lin::Mat<double> JF;
-        lin::Mat<double>(*G)(lin::Mat<double>);
-        lin::Mat<double> JG;
+        lin::Mat<double>(*F)(lin::Mat<double>, lin::Mat<double>); // f(x,u)
+        lin::Mat<double> JF; // f(x,u) jacobian
+        lin::Mat<double>(*G)(lin::Mat<double>); // g(x)
+        lin::Mat<double> JG; // g(x) jacobian
         lin::Mat<double>* Xk; // state matrix
         lin::Mat<double>* Uk; // control matrix
-        lin::Mat<double>* Pk; // process covariance matrix
+        lin::Mat<double> Qk; // process noise covariance matrix
+        lin::Mat<double> Pk; // process covariance matrix
+        lin::Mat<double> Rk; // sensor noise covariance matrix
         lin::Mat<double> K; // kalman gain
-        lin::Mat<double>* Rk; // sensor covariance matrix
         lin::Mat<double>* Zk; // sensor  matrix
-    public:
-        EKFin(){}
-        void setState(lin::Mat<double> *statesValue){Xk = statesValue;}
-        void setCovariance(lin::Mat<double> *covarianceMat){Pk = covarianceMat;}
-        void setSensorError(lin::Mat<double> *sensorErrorMat){Rk = sensorErrorMat;}
-        void setSensor(lin::Mat<double> *sensorMat){Zk = sensorMat;}
-        void setControl(lin::Mat<double> *controlMat){Uk = controlMat;}
-        void setF(lin::Mat<double> (*f)(lin::Mat<double>, lin::Mat<double>)){
-            F = f;
-        }
-        void setG(lin::Mat<double>(*g)(lin::Mat<double>)){
-            G = g;
-        }
         void computeJacobians(double delta = 0.01){
             int i,j;
             lin::Mat<double> J(Xk->rows, Xk->rows);
@@ -102,18 +90,33 @@ class EKFin{
             std::cout << " JG :" << JG;
             std::cout << std::endl;
         }
-        void predict(lin::Mat<double> Q){
+    public:
+        EKFin(){}
+        void setState(lin::Mat<double> *statesValue){Xk = statesValue;}
+        void setProcessNoiseCovariance(lin::Mat<double> covarianceMat){Qk = covarianceMat;}
+        void setSensorNoiseCovariance(lin::Mat<double> covarianceMat){Rk = covarianceMat;}
+        void setSensor(lin::Mat<double> *sensorMat){Zk = sensorMat;}
+        void setControl(lin::Mat<double> *controlMat){Uk = controlMat;}
+        void setF(lin::Mat<double> (*f)(lin::Mat<double>, lin::Mat<double>)){F = f;}
+        void setG(lin::Mat<double>(*g)(lin::Mat<double>)){G = g;}
+        void init(){
+            lin::Mat<double> pkC(Xk->rows, Xk->rows);
+            Pk = pkC.I();
+        }
+        void predict(){
             (*Xk) =  F((*Xk), (*Uk));
-            (*Pk) = JF*(*Pk)*JF.T() + Q;
+            computeJacobians();
+            Pk = JF*Pk*JF.T() + Qk;
         }
         void update(){
+            lin::Mat<double> Yk, Sk, Ik;
+            Yk = (*Zk) - G((*Xk));
+            Sk = JG*Pk*JG.T() + Rk;
             bool b;
-            K = (*Pk)*JG.T()*(JG*(*Pk)*JG.T() + (*Rk)).inverse(b);
-            (*Xk) = (*Xk) + K*((*Zk) - G((*Xk)));
-            lin::Mat<double> inter;
-            inter = K*JG;
-            *Pk = (inter.I() - inter)*(*Pk);
-            computeJacobians();
+            K = Pk*JG.T()*Sk.inverse(b);
+            (*Xk) = (*Xk) + K*Yk;
+            Ik = K*JG;
+            Pk = (Ik.I() - Ik)*Pk;
         }
 };
 
