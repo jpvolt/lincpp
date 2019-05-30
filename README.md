@@ -4,7 +4,7 @@ simple linear algebra c++ header only library - educational purpose
 
 # Usage
 
-```
+```C++
 #include "lin/mat.hpp"
 
 using namespace lin;
