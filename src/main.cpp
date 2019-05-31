@@ -25,7 +25,7 @@ class RadarSim{
             alt = alt + 0.1*rand;
             pos = pos + vel*dt;
 
-            double err = pos + 0.05*rand;
+            double err = pos * 0.05*rand;
             double slant_dist = std::sqrt(std::pow(pos,2)+std::pow(alt,2));
 
             return slant_dist + err;
@@ -109,8 +109,8 @@ int main(int argc, char *argv[]){
 
      std::random_device rd;
     std::mt19937 mt(rd());
-    std::uniform_real_distribution<double> dist(0.0, 10.0);
-    for(int i=0;i<100;i++){
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    for(int i=0;i<400;i++){
 
         double p,v,a,z;
         
@@ -118,15 +118,13 @@ int main(int argc, char *argv[]){
         myReadFile>>v;
         myReadFile>>a;
         myReadFile>>z;
-             
-        Z = z;
 
-    /* 
-        Z = radar.getRange(Random::get(-1., 1.));  
+     
+        Z = radar.getRange(dist(mt));  
         p = radar.pos;
         v = radar.vel;
         a = radar.alt;
-        */
+   
         positionr.push_back(p);
         velocityr.push_back(v);
         altituder.push_back(a);
