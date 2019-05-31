@@ -52,6 +52,7 @@ class EKFin{
         lin::Mat<double>* Uk; // control matrix
         lin::Mat<double> Qk; // process noise covariance matrix
         lin::Mat<double> Rk; // sensor noise covariance matrix
+        lin::Mat<double> Pk; // process covariance matrix
         lin::Mat<double> K; // kalman gain
         lin::Mat<double>* Zk; // sensor  matrix
         lin::Mat<double>(*jf)(lin::Mat<double>); // compute jacobian at x
@@ -107,7 +108,6 @@ class EKFin{
                 }
         }
     public:
-        lin::Mat<double> Pk; // process covariance matrix
         EKFin(){}
         void setState(lin::Mat<double> *statesValue){Xk = statesValue;}
         void setProcessNoiseCovariance(lin::Mat<double> covarianceMat){Qk = covarianceMat;}
@@ -118,9 +118,9 @@ class EKFin{
         void setG(lin::Mat<double>(*g)(lin::Mat<double>)){G = g;}
         void setFJacobian(lin::Mat<double> (*f)(lin::Mat<double>)){jf = f; jf_s = true;}
         void setGJacobian(lin::Mat<double>(*g)(lin::Mat<double>)){jg = g;jg_s = true;}
-        void init(){
+        void init(double multiplier){
             lin::Mat<double> pkC(Xk->rows, Xk->rows);
-            Pk = pkC.I()*50;
+            Pk = pkC.I()*multiplier;
         }
         void predict(){
             computeJF();
