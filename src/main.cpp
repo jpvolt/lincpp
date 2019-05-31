@@ -7,16 +7,37 @@
 #include <random>
 #include <vector>
 #include <cmath>
+#include<fstream>
+#include "random.hpp"
 
 #define print std::cout<<"here"<<std::endl;
 
 namespace plt = matplotlibcpp;
+using Random = effolkronium::random_static;
+
+
+class RadarSim{
+    public:
+        double pos, vel, alt, dt;
+        RadarSim(double pos, double vel, double alt, double dt):pos(pos), vel(vel), alt(alt), dt(dt){}
+        double getRange(double rand){
+            vel = vel + 0.1*rand;
+            alt = alt + 0.1*rand;
+            pos = pos + vel*dt;
+
+            double err = pos + 0.05*rand;
+            double slant_dist = std::sqrt(std::pow(pos,2)+std::pow(alt,2));
+
+            return slant_dist + err;
+        }
+};
 
 lin::Mat<double> F(lin::Mat<double> X, lin::Mat<double> u){
     lin::Mat<double> out(3,1);
-    out(0,0) = X(0,0) + X(1,0)*u(0,0);
-    out(1,0) = X(1,0);
-    out(2,0) = X(2,0);
+    lin::Mat<double> A(3,3);
+    A = A.I();
+    A(0,1) = 0.05;
+    out = A*X;
     return out;
 }
 lin::Mat<double> JG(lin::Mat<double> X){
@@ -36,33 +57,33 @@ lin::Mat<double> G(lin::Mat<double> X){
 
 int main(int argc, char *argv[]){
 
-    // Define random generator with Gaussian distribution
-    std::default_random_engine generator;
-    std::normal_distribution<double> radar(0, 5);
-    std::normal_distribution<double> dist(0, 0.2);
+    double dt = 0.05;
+
+    RadarSim radar(0,100,1000,dt);
+    kalman::EKFin ekf;
     
     lin::Mat<double> X(3,1);
-    X = {0, 200, 1100};
+    X = {radar.pos-100, radar.vel+100, radar.alt+1000};
 
     lin::Mat<double> R(1,1);
     R = 25;
 
-
+    // copyed from example
     lin::Mat<double> Q(3,3);
-    Q = 0;
-    Q(2,2) = 0.1;
-    Q(0,0) = 1.5625e-07;
-    Q(0,1) = 6.2500e-06;
-    Q(1,0) = 6.2500e-06;
-    Q(1,1) = 2.5000e-04;
+    Q = {1.5625e-07, 6.2500e-06, 0.0000e+00,
+        6.2500e-06, 2.5000e-04, 0.0000e+00,
+        0.0000e+00, 0.0000e+00, 1.0000e-01};
+
+
+    lin::Mat<double> pkC(X.rows, X.rows);
+    ekf.Pk = pkC.I()*50;
 
     lin::Mat<double> Z(1,1);
     Z = 0;
 
     lin::Mat<double> control(1,1);
-    control = 0.05;
+    control = dt;
 
-    kalman::EKFin ekf;
 
     ekf.setState(&X);
     ekf.setSensorNoiseCovariance(R);
@@ -80,37 +101,53 @@ int main(int argc, char *argv[]){
     std::vector<double> positionk;
     std::vector<double> velocityk;
     std::vector<double> altitudek;
+    std::vector<double> time;
+    std::vector<double> zs;
 
-    double pos = 0;
-    double vel = 100;
-    double alt = 1000;
+    std::ifstream myReadFile;
+     myReadFile.open("in.txt");
 
-    for(int i=0;i<200;i++){
+     std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_real_distribution<double> dist(0.0, 10.0);
+    for(int i=0;i<100;i++){
+
+        double p,v,a,z;
         
-        vel+= 0.01*dist(generator);
-        alt+= 0.01*dist(generator);
-        pos+= vel*0.1;
-        double err = pos + 0.05*dist(generator);
-        Z(0,0) = std::sqrt(std::pow(pos,2) + std::pow(alt,2)) + err;
-        positionr.push_back(pos);
-        velocityr.push_back(vel);
-        altituder.push_back(alt);
+        myReadFile>>p;
+        myReadFile>>v;
+        myReadFile>>a;
+        myReadFile>>z;
+             
+        Z = z;
 
-        ekf.predict();
-        ekf.update();
+    /* 
+        Z = radar.getRange(Random::get(-1., 1.));  
+        p = radar.pos;
+        v = radar.vel;
+        a = radar.alt;
+        */
+        positionr.push_back(p);
+        velocityr.push_back(v);
+        altituder.push_back(a);
+
+        ekf.predict_update();
+
         positionk.push_back(X(0,0));
         velocityk.push_back(X(1,0));
         altitudek.push_back(X(2,0));
 
+
+        time.push_back((i*dt));
         
     }
 
-    plt::named_plot("pos real", positionr);
-    plt::named_plot("pos kalman", positionk);
-    plt::named_plot("vel real", velocityr);
-    plt::named_plot("vel kalman", velocityk);
-    plt::named_plot("altitude real", altituder);
-    plt::named_plot("altitude kalman", altitudek);
+    plt::named_plot("pos real", time, positionr);
+    plt::named_plot("pos kalman",time, positionk);
+    plt::named_plot("vel real", time, velocityr);
+    plt::named_plot("vel kalman",time, velocityk);
+    plt::named_plot("alt real", time, altituder);
+    plt::named_plot("alt kalman",time, altitudek);
     plt::legend();
     plt::show();
 
