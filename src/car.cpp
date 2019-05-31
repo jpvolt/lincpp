@@ -7,50 +7,56 @@
 #include <random>
 #include <vector>
 #include <cmath>
+#include "rapidcsv.h"
 
-#define print std::cout<<"here"<<std::endl;
 
 namespace plt = matplotlibcpp;
 double dt = 0.01;
 
 lin::Mat<double> F(lin::Mat<double> x, lin::Mat<double> u){
-    lin::Mat<double> out(2,1);
-    out(0,0) = x(0,0) + cos(x(1,0))*u(0,0);
-    out(1,0) = x(1,0);
+    lin::Mat<double> out(4,1);
+    out(0,0) = x(0,0) + x(2,0)*std::cos(x(3,0))*u(0,0); // x = x + v.cos(theta).dt
+    out(1,0) = x(1,0) + x(2,0)*std::sin(x(3,0))*u(0,0); // y = y + v.sin(theta).dt
+    out(3,0) = x(3,0) + x(2,0)*std::tan(u(1,0))*u(0,0)/u(2,0); // theta = theta + v.tan(delta).dt/l
+    out(2,0) = x(2,0); // v = v
     return out;
 }
 
 lin::Mat<double> G(lin::Mat<double> x){
+    lin::Mat<double> out(3,1);
+    out(0,0) = x(0,0); // gpsx = x
+    out(1,0) = x(1,0); // gpsy = y
+    out(2,0) = x(2,0); // vpir = v
+    return out;
+}
+lin::Mat<double> GPStoCart(double latitude, double longitude){
     lin::Mat<double> out(2,1);
-    out(0,0) = x(0,0);
-    out(1,0) = x(1,0);
+    double R = 6371000;
+    out(0,0) =  R * std::cos(latitude*0.017) * cos(longitude*0.017);
+    out(1,0) =  R * std::cos(latitude*0.017) * sin(longitude*0.017);
     return out;
 }
 
 int main(int argc, char *argv[]){
-
-    // Define random generator with Gaussian distribution
-    const double mean = 0.0;
-    const double stddev = 0.3;
-    std::default_random_engine generator;
-    std::normal_distribution<double> dist(mean, stddev);
     
-    lin::Mat<double> X(2,1);
+    lin::Mat<double> X(4,1);
     X = 0;
 
-    lin::Mat<double> R(2,2);
+    lin::Mat<double> R(3,3);
     R = 0;
-    R(0,0) = 0.64;
-    R(1,1) = 0.32;
+    R(0,0) = 3.3; // gpsx error
+    R(1,1) = 3.3; // gpsy error
+    R(2,2) = 2; // vpir error
 
-    lin::Mat<double> Q(2,2);
-    Q = Q.I()*0.001;
+    lin::Mat<double> Q(4,4);
+    Q = Q.I()*0.1;
 
-    lin::Mat<double> Z(2,1);
+    lin::Mat<double> Z(3,1);
     Z = 0;
 
-    lin::Mat<double> control(1,1);
-    control = dt;
+    lin::Mat<double> control(3,1);
+    control(0,0) = dt; // dt
+    control(2,0) = 1.5; // l
 
     kalman::EKFin ekf;
 
@@ -61,49 +67,84 @@ int main(int argc, char *argv[]){
     ekf.setControl(&control);
     ekf.setF(F);
     ekf.setG(G);
-    ekf.init(50);
+    ekf.init(1);
 
 
-    std::vector<double> xr;
-    std::vector<double> tr;
-    std::vector<double> xk;
-    std::vector<double> tk;
-    std::vector<double> xs;
-    std::vector<double> ts;
+    // load gps csv
+    rapidcsv::Document gpsCSV( "Final_Log_GPS.csv", rapidcsv::LabelParams(0,-1), rapidcsv::SeparatorParams(';'),rapidcsv::ConverterParams(true));
+    
+    // load gps data into vectors
+    std::vector<double> longitude = gpsCSV.GetColumn<double>("Longitude");
+    std::vector<double> latitude  = gpsCSV.GetColumn<double>("Latitude");
+    std::vector<double> timeGps  = gpsCSV.GetColumn<double>("Time [s]");
+    // compute gps frequency from time data
+    double gps_freq = timeGps.size()/(timeGps.back()-timeGps[0]);
+    double total_time = timeGps.back()-timeGps[0];
+
+    // load steering csv 
+    rapidcsv::Document steerCSV("Final_Log_Steering.csv", rapidcsv::LabelParams(0,-1), rapidcsv::SeparatorParams(';'),rapidcsv::ConverterParams(true));
+    // load steering data into vectors
+    std::vector<double> steering = steerCSV.GetColumn<double>("Steering Angle [o]");
+    std::vector<double> timeSteer  = steerCSV.GetColumn<double>("Time [s]");
+    // compute steering sensor frequency from time data
+    double steer_freq = timeSteer.size()/(timeSteer.back()-timeSteer[0]);
+
+    // load pir(wheel speed) csv 
+    rapidcsv::Document pirCSV("Final_Log_PirF.csv", rapidcsv::LabelParams(0,-1), rapidcsv::SeparatorParams(';'),rapidcsv::ConverterParams(true));
+    // load pir data into vectors
+    std::vector<double> pir = pirCSV.GetColumn<double>("Average Speed (aprox.) [km/h]");
+    std::vector<double> timePir  = pirCSV.GetColumn<double>("Time [s]");
+    // compute pir sensor frequency from time data
+    double pir_freq = timePir.size()/(timePir.back()-timePir[0]);
+
+    int index_gps, index_pir, index_steer;
+
+    // initialize X 
+    lin::Mat<double> cart;
+    cart = GPStoCart(latitude[0], longitude[0]);
+    X(0,0) = cart(0,0); 
+    X(1,0) = cart(1,0); 
+
+    cart = GPStoCart(latitude[100], longitude[100]);
+    double dx, dy;
+    dx = cart(0,0) - X(0,0); 
+    dy = cart(1,0) - X(1,0); 
+    std::cout<<"dy/dx:" <<dx/dy<<std::endl;
+    X(3,0) = std::atan(dy/dx);
+    X(2,0) = pir[0];
 
 
-    double x = 0;
-    double t = 0;
-    double  LO = -2;
-    double HI = 4;
-    lin::Mat<double> s(2,1);
-    s = 0;
-        for(int i=0;i<100;i++){
+    std::vector<double> gpsx, gpsy,  pirv,  x, y, v, theta;
 
+    for(int i = 31000;i<33000;i++){
+        index_gps = (gps_freq/pir_freq)*i;
+        index_steer = (steer_freq/pir_freq)*i;
+        index_pir = i;
 
+        cart = GPStoCart(latitude[index_gps], longitude[index_gps]);
+        Z(0,0) = cart(0,0);
+        gpsx.push_back(Z(0,0));
+        Z(1,0) = cart(1,0);
+        gpsy.push_back(Z(1,0));
+        Z(2,0) = pir[index_pir];
+        pirv.push_back(Z(2,0));
 
-        s = {X(0,0), X(1,0) + X(1,0)*0.05*dist(generator)};
-        s = F(s, control);
-
-        xr.push_back(s(0,0));
-        tr.push_back(s(1,0));
-
-        Z(0,0) = s(0,0) + 3*dist(generator);
-        Z(1,0) = s(1,0) + 1*dist(generator);
-        xs.push_back(Z(0,0));
-        ts.push_back(Z(1,0));
+        control(1,0) = steering[index_steer] * 0.017 ; // multiply by 0.017 to convert from degres to radians
 
         ekf.predict_update();
 
-        xk.push_back(X(0,0));
-        tk.push_back(X(1,0));
-
+        x.push_back(X(0,0));
+        y.push_back(X(1,0));
+        v.push_back(X(2,0));
+        theta.push_back(X(3,0));
 
     }
 
-    plt::named_plot("Real x",xr);
-    plt::named_plot("Sensor x",xs);
-    plt::named_plot("kalman x",xk);
+
+    plt::named_plot("Gps x", gpsx);
+    plt::named_plot("kalman x",x);
+    //plt::named_plot("pir v", pirv);
+    //plt::named_plot("kalman v",v);
     plt::legend();
     plt::show();
 
