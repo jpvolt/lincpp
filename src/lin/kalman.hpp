@@ -166,6 +166,7 @@ class EKFin{
             lin::Mat<double> x;
             computeJF();
             std::cout<<"Xk_:"<<(*Xk);
+            std::cout<<"JF:"<<JF;
             x =  F((*Xk), (*Uk)); // diff filterpy
             std::cout<<"Xk:"<<x;
             Pk = JF*Pk*JF.T() + Qk; // diff

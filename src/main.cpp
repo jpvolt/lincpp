@@ -32,7 +32,6 @@ class RadarSim{
         }
 };
 
-lin::Mat<double> F(lin::Mat<double> X, lin::Mat<double> u){
     lin::Mat<double> out(3,1);
     lin::Mat<double> A(3,3);
     A = A.I();
@@ -93,7 +92,7 @@ int main(int argc, char *argv[]){
     ekf.setF(F);
     ekf.setG(G);
     ekf.setGJacobian(JG);
-    ekf.init();
+    ekf.init(1);
 
     std::vector<double> positionr;
     std::vector<double> velocityr;
