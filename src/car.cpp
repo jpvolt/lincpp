@@ -23,11 +23,11 @@ lin::Mat<double> F(lin::Mat<double> x, lin::Mat<double> u){
 }
 
 lin::Mat<double> G(lin::Mat<double> x){
-    lin::Mat<double> out(4,1);
+    lin::Mat<double> out(3,1);
     out(0,0) = x(0,0); // gpsx = x
     out(1,0) = x(1,0); // gpsy = y
     out(2,0) = x(2,0); // vpir = v
-    out(3,0) = x(2,0); // vvcu = v
+    //out(3,0) = x(2,0); // vvcu = v
     return out;
 }
 lin::Mat<double> GPStoCart(double latitude, double longitude){
@@ -43,17 +43,17 @@ int main(int argc, char *argv[]){
     lin::Mat<double> X(4,1);
     X = 0;
 
-    lin::Mat<double> R(4,4);
+    lin::Mat<double> R(3,3);
     R = 0;
-    R(0,0) = 3.3; // gpsx error
-    R(1,1) = 3.3; // gpsy error
-    R(2,2) = 2; // vpir error
-    R(3,3) = 100; // vcu error
+    R(0,0) = 9.3; // gpsx error
+    R(1,1) = 9.3; // gpsy error
+    R(2,2) = 5; // vpir error
+    //R(3,3) = 100; // vcu error
 
     lin::Mat<double> Q(4,4);
     Q = Q.I();
 
-    lin::Mat<double> Z(4,1);
+    lin::Mat<double> Z(3,1);
     Z = 0;
 
     lin::Mat<double> control(3,1);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
     ekf.setControl(&control);
     ekf.setF(F);
     ekf.setG(G);
-    ekf.init(100);
+    ekf.init(1);
 
 
     // load gps csv
@@ -137,6 +137,15 @@ int main(int argc, char *argv[]){
         index_vcu = (vcu_freq/pir_freq)*i;
         index_pir = i;
 
+        if(i%10==0){
+            //R(0,0) = 9.0;
+            //R(1,1) = 9.0;
+        }else{
+            R(0,0) = 900000.0;
+            R(1,1) = 900000.0;
+
+        }
+
         cart = GPStoCart(latitude[index_gps], longitude[index_gps]);
         Z(0,0) = cart(0,0);
         gpsx.push_back(Z(0,0));
@@ -145,7 +154,7 @@ int main(int argc, char *argv[]){
         Z(2,0) = pir[index_pir];
         pirv.push_back(Z(2,0));
         //Z(3,0) = vcu[index_vcu];
-        vcuv.push_back(Z(3,0));
+        //vcuv.push_back(Z(3,0));
 
         control(1,0) = steering[index_steer] * 0.017 ; // multiply by 0.017 to convert from degres to radians
 
@@ -159,11 +168,11 @@ int main(int argc, char *argv[]){
     }
 
 
-    //plt::named_plot("Gps x", gpsx);
-    //plt::named_plot("kalman x",x);
-    plt::named_plot("pir v", pirv);
-    plt::named_plot("vcu v", vcuv);
-    plt::named_plot("kalman v",v);
+    plt::named_plot("Gps x", gpsx);
+    plt::named_plot("kalman x",x);
+    //plt::named_plot("pir v", pirv);
+    //plt::named_plot("vcu v", vcuv);
+    //plt::named_plot("kalman v",v);
     plt::legend();
     plt::show();
 
