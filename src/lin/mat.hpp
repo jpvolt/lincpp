@@ -79,11 +79,11 @@ template <typename t>
                 }
             }
             t& operator ()(int idx, int idy){
-                assert(idx<rows && ixy<cols);
+                assert(idx<rows && idy<cols);
                 return data[idx][idy];
             }
             t operator ()(int idx, int idy) const{
-                assert(idx<rows && ixy<cols);
+                assert(idx<rows && idy<cols);
                 return data[idx][idy];
             }
             template<typename y>
