@@ -1,7 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "lin/mat.hpp"
-#include "lin/kalman.hpp"
+#include "mat.hpp"
 
 TEST_CASE("Matrix multiplication", "[Multiplication]"){
     lin::Mat<double> a(3,3);

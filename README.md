@@ -1,11 +1,16 @@
 # lincpp
 simple linear algebra c++ header only library - educational purpose 
 
+## Features 
+
+- Matrix multiplication
+- Matrix transpose 
+- Matrix Inversion
 
 # Usage
 
 ```C++
-#include "lin/mat.hpp"
+#include "mat.hpp"
 
 using namespace lin;
 
